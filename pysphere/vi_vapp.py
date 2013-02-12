@@ -1,4 +1,4 @@
-#--
+# --
 # Copyright (c) 2012, Sebastian Tello
 # All rights reserved.
 
@@ -25,7 +25,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-#--
+# --
 
 import sys
 import time
@@ -52,22 +52,22 @@ class VIVApp:
             try:
                 self._file_mgr = guest_op.fileManager._obj
             except AttributeError:
-                #file manager not present
+                # file manager not present
                 pass
             try:
-                #process manager not present
+                # process manager not present
                 self._proc_mgr = guest_op.processManager._obj
             except:
                 pass
         except AttributeError:
-            #guest operations not supported (since API 5.0)
+            # guest operations not supported (since API 5.0)
             pass
-        
-    #-------------------#
-    #-- POWER METHODS --#
-    #-------------------#
-    def power_on(self, sync_run = True):
-        """Attemps to power on the vApp. If @sync_run is True (default) waits for
+
+    # ------------------- #
+    # -- POWER METHODS -- #
+    # ------------------- #
+    def power_on(self, sync_run=True):
+        """Attempts to power on the vApp. If @sync_run is True (default) waits for
         the task to finish, and returns (raises an exception if the task didn't
         succeed). If sync_run is set to False the task is started an a VITask
         instance is returned. """
@@ -92,7 +92,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def power_off(self, sync_run = True):
+    def power_off(self, sync_run=True):
         """Attemps to power off the vApp. If @sync_run is True (default) waits for
         the task to finish, and returns (raises an exception if the task didn't
         succeed). If sync_run is set to False the task is started an a VITask
@@ -118,7 +118,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def get_status(self, basic_status = False):
+    def get_status(self, basic_status=False):
         """Returns any of the status strings defined in VMPowerState:
         basic statuses:
             'POWERED ON', 'POWERED OFF', 'SUSPENDED', 'BLOCKED ON MSG'
@@ -128,7 +128,7 @@ class VIVApp:
         if basic_status is False (defautl) and the server is a vCenter, then
         one of the extended statuses might be returned.
         """
-        #we can't check tasks in a VMWare Server or ESXi
+        # we can't check tasks in a VMWare Server or ESXi
         if not basic_status and self._server.get_api_type() == 'VirtualCenter':
             try:
                 if not self._mor_vm_task_collector:
@@ -136,7 +136,7 @@ class VIVApp:
             except VIApiException:
                 basic_status = True
 
-        #get the VM current power state, and messages blocking if any
+        # get the VM current power state, and messages blocking if any
         vi_power_states = {'poweredOn':VMPowerState.POWERED_ON,
                            'poweredOff': VMPowerState.POWERED_OFF,
                            'suspended': VMPowerState.SUSPENDED}
@@ -145,7 +145,7 @@ class VIVApp:
 
         oc_vm_status_msg = self._server._get_object_properties(
                       self._mor,
-                      property_names = ['runtime.question', 'runtime.powerState']
+                      property_names=['runtime.question', 'runtime.powerState']
                       )
         properties = oc_vm_status_msg.PropSet
         for prop in properties:
@@ -154,14 +154,14 @@ class VIVApp:
             if prop.Name == 'runtime.question':
                 return VMPowerState.BLOCKED_ON_MSG
 
-        #we can't check tasks in a VMWare Server
+        # we can't check tasks in a VMWare Server
         if self._server.get_api_type() != 'VirtualCenter' or basic_status:
             return vi_power_states.get(power_state, VMPowerState.UNKNOWN)
 
-        #on the other hand, get the current task running or queued for this VM
+        # on the other hand, get the current task running or queued for this VM
         oc_task_history = self._server._get_object_properties(
                       self._mor_vm_task_collector,
-                      property_names = ['latestPage']
+                      property_names=['latestPage']
                       )
         properties = oc_task_history.PropSet
         if len(properties) == 0:
@@ -193,7 +193,7 @@ class VIVApp:
                                                      'poweredOff', 'suspended']:
                         return VMPowerState.POWERING_ON
                 return vi_power_states.get(power_state, VMPowerState.UNKNOWN)
-     
+
     def is_powering_off(self):
         """Returns True if the VM is being powered off"""
         return self.get_status() == VMPowerState.POWERING_OFF
@@ -231,9 +231,9 @@ class VIVApp:
         return self.get_status() == VMPowerState.REVERTING_TO_SNAPSHOT
 
     #-------------------------#
-    #-- GUEST POWER METHODS --#
+    # -- GUEST POWER METHODS --#
     #-------------------------#
-    
+
     def reboot_guest(self):
         """Issues a command to the guest operating system asking it to perform
         a reboot. Returns immediately and does not wait for the guest operating
@@ -274,18 +274,18 @@ class VIVApp:
             mor_vm = request.new__this(self._mor)
             mor_vm.set_attribute_type(self._mor.get_attribute_type())
             request.set_element__this(mor_vm)
-            
+
             self._server._proxy.StandbyGuest(request)
-            
+
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
     #--------------#
-    #-- CLONE VM --#
+    # -- CLONE VM --#
     #--------------#
-    def clone(self, name, sync_run = True, folder = None, resourcepool = None,
-              datastore = None, host = None, power_on = True, template = False,
-              snapshot = None, linked = False):
+    def clone(self, name, sync_run=True, folder=None, resourcepool=None,
+              datastore=None, host=None, power_on=True, template=False,
+              snapshot=None, linked=False):
         """Clones this Virtual Machine
         @name: name of the new virtual machine
         @sync_run: if True (default) waits for the task to finish, and returns
@@ -330,10 +330,10 @@ class VIVApp:
             is only valid when cloning from a snapshot
         """
         try:
-            #get the folder to create the VM
+            # get the folder to create the VM
             folders = self._server._retrieve_properties_traversal(
-                                         property_names = ['name', 'childEntity'],
-                                         obj_type = MORTypes.Folder)
+                                         property_names=['name', 'childEntity'],
+                                         obj_type=MORTypes.Folder)
             folder_mor = None
             for f in folders:
                 fname = ""
@@ -352,7 +352,7 @@ class VIVApp:
             elif not folder_mor:
                 raise VIException("Error locating current VM folder",
                                   FaultTypes.OBJECT_NOT_FOUND)
-    
+
             request = VI.CloneVM_TaskRequestMsg()
             _this = request.new__this(self._mor)
             _this.set_attribute_type(self._mor.get_attribute_type())
@@ -396,15 +396,15 @@ class VIVApp:
                             break
                 if not sn_mor:
                     raise VIException("Could not find snapshot '%s'" % snapshot,
-                                      FaultTypes.OBJECT_NOT_FOUND) 
+                                      FaultTypes.OBJECT_NOT_FOUND)
                 snapshot = spec.new_snapshot(sn_mor)
                 snapshot.set_attribute_type(sn_mor.get_attribute_type())
                 spec.set_element_snapshot(snapshot)
-            
+
             if linked and snapshot:
                 location.set_element_diskMoveType("createNewChildDiskBacking")
-                
-            spec.set_element_location(location)    
+
+            spec.set_element_location(location)
             spec.set_element_template(template)
             request.set_element_spec(spec)
             task = self._server._proxy.CloneVM_Task(request)._returnval
@@ -415,18 +415,18 @@ class VIVApp:
                 if status == vi_task.STATE_ERROR:
                     raise VIException(vi_task.get_error_message(),
                                       FaultTypes.TASK_ERROR)
-                return VIVirtualMachine(self._server, vi_task.get_result()._obj) 
-                
+                return VIVirtualMachine(self._server, vi_task.get_result()._obj)
+
             return vi_task
 
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
     #-------------#
-    #-- VMOTION --#
+    # -- VMOTION --#
     #-------------#
-    def migrate(self, sync_run = True, priority = 'default', resource_pool = None,
-                host = None, state = None):
+    def migrate(self, sync_run=True, priority='default', resource_pool=None,
+                host=None, state=None):
         """
         Cold or Hot migrates this VM to a new host or resource pool.
         @sync_run: If True (default) waits for the task to finish, and returns 
@@ -458,7 +458,7 @@ class VIVApp:
                                                 VMPowerState.POWERED_OFF,
                                                 VMPowerState.SUSPENDED),
                                    FaultTypes.PARAMETER_ERROR)
-                
+
             request = VI.MigrateVM_TaskRequestMsg()
             _this = request.new__this(self._mor)
             _this.set_attribute_type(self._mor.get_attribute_type())
@@ -481,7 +481,7 @@ class VIVApp:
                           VMPowerState.POWERED_OFF: 'poweredOff',
                           VMPowerState.SUSPENDED:   'suspended'}
                 request.set_element_state(states[state])
-            
+
             task = self._server._proxy.MigrateVM_Task(request)._returnval
             vi_task = VITask(task, self._server)
             if sync_run:
@@ -495,9 +495,9 @@ class VIVApp:
             return vi_task
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-        
-    def relocate(self, sync_run = True, priority = 'default', datastore = None,
-                 transform = None):
+
+    def relocate(self, sync_run=True, priority='default', datastore=None,
+                 transform=None):
         """
         Cold or Hot relocates this virtual machine's virtual disks to a new 
         datastore.
@@ -520,7 +520,7 @@ class VIVApp:
                         FaultTypes.PARAMETER_ERROR)
             if transform and transform not in [None, 'flat', 'sparse']:
                 raise VIException(
-                        "transform, if set, must be either '%s' or '%s'." 
+                        "transform, if set, must be either '%s' or '%s'."
                         % ('flat', 'sparse'), FaultTypes.PARAMETER_ERROR)
             request = VI.RelocateVM_TaskRequestMsg()
             _this = request.new__this(self._mor)
@@ -551,7 +551,7 @@ class VIVApp:
             raise VIApiException(e)
 
     #----------------------#
-    #-- SNAPSHOT METHODS --#
+    # -- SNAPSHOT METHODS --#
     #----------------------#
 
     def get_snapshots(self):
@@ -568,7 +568,7 @@ class VIVApp:
                 return snap._name
         return None
 
-    def revert_to_snapshot(self, sync_run = True, host = None):
+    def revert_to_snapshot(self, sync_run=True, host=None):
         """Attemps to revert the VM to the current snapshot. If @sync_run is
         True (default) waits for the task to finish, and returns (raises an
         exception if the task didn't succeed). If sync_run is set to False the
@@ -601,7 +601,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def revert_to_named_snapshot(self, name, sync_run = True, host = None):
+    def revert_to_named_snapshot(self, name, sync_run=True, host=None):
         """Attemps to revert the VM to the snapshot of the given name (the first
         match found). If @sync_run is True (default) waits for the task to
         finish, and returns (raises an exception if the task didn't succeed).
@@ -644,7 +644,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def revert_to_path(self, path, index = 0, sync_run = True, host = None):
+    def revert_to_path(self, path, index=0, sync_run=True, host=None):
         """Attemps to revert the VM to the snapshot of the given path and index
         (to disambiguate among snapshots with the same path, default 0)
         If @sync_run is True (default) waits for the task to finish, and returns
@@ -688,8 +688,8 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def create_snapshot(self, name, sync_run = True, description = None,
-                        memory = True, quiesce = True):
+    def create_snapshot(self, name, sync_run=True, description=None,
+                        memory=True, quiesce=True):
         """
         Takes a snapshot of this VM
         @sync_run: if True (default) waits for the task to finish, and returns
@@ -736,7 +736,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def delete_current_snapshot(self, remove_children = False, sync_run = True):
+    def delete_current_snapshot(self, remove_children=False, sync_run=True):
         """Removes the current snapshot. If @remove_children is True, removes
         all the snapshots in the subtree as well. If @sync_run is True (default)
         waits for the task to finish, and returns (raises an exception if the
@@ -750,7 +750,7 @@ class VIVApp:
         return self.__delete_snapshot(self.__current_snapshot, remove_children,
                                                                        sync_run)
 
-    def delete_named_snapshot(self, name, remove_children = False, sync_run = True):
+    def delete_named_snapshot(self, name, remove_children=False, sync_run=True):
         """Removes the first snapshot found in this VM named after @name
         If @remove_children is True, removes all the snapshots in the subtree as
         well. If @sync_run is True (default) waits for the task to finish, and
@@ -769,8 +769,8 @@ class VIVApp:
         return self.__delete_snapshot(mor, remove_children, sync_run)
 
 
-    def delete_snapshot_by_path(self, path, index = 0, remove_children = False,
-                                                                 sync_run = True):
+    def delete_snapshot_by_path(self, path, index=0, remove_children=False,
+                                                                 sync_run=True):
         """Removes the VM snapshot of the given path and index (to disambiguate
         among snapshots with the same path, default 0). If @remove_children is
         True, removes all the snapshots in the subtree as well. If @sync_run is
@@ -793,13 +793,13 @@ class VIVApp:
 
     def refresh_snapshot_list(self):
         """Refreshes the internal list of snapshots of this VM"""
-        self.__update_properties()    
+        self.__update_properties()
 
     #--------------------------#
-    #-- VMWARE TOOLS METHODS --#
+    # -- VMWARE TOOLS METHODS --#
     #--------------------------#
 
-    def upgrade_tools(self, sync_run = True, params = None):
+    def upgrade_tools(self, sync_run=True, params=None):
         """Attemps to upgrade the VMWare tools in the guest.
         If @sync_run is True (default) waits for the task to finish, and returns
         (raises an exception if the task didn't succeed)
@@ -846,7 +846,7 @@ class VIVApp:
                     'toolsOld':ToolsStatus.RUNNING_OLD}
 
         oc = self._server._get_object_properties(self._mor,
-                                           property_names = ['guest.toolsStatus'])
+                                           property_names=['guest.toolsStatus'])
         if not hasattr(oc, 'PropSet'):
             return ToolsStatus.UNKNOWN
         prop_set = oc.PropSet
@@ -857,7 +857,7 @@ class VIVApp:
                 return statuses.get(prop.Val, ToolsStatus.UNKNOWN)
 
 
-    def wait_for_tools(self, timeout = 15):
+    def wait_for_tools(self, timeout=15):
         """Waits for the VMWare tools to be running in the guest. Or for the
         timeout in seconds to expire. If timed out a VIException is thrown"""
         timeout = abs(int(timeout))
@@ -874,7 +874,7 @@ class VIVApp:
             time.sleep(1.5)
 
     #--------------------------#
-    #-- GUEST AUTHENTICATION --#
+    # -- GUEST AUTHENTICATION --#
     #--------------------------#
     def login_in_guest(self, user, password):
         """Authenticates in the guest with the acquired credentials for use in 
@@ -884,13 +884,13 @@ class VIVApp:
         auth.set_element_username(user)
         auth.set_element_password(password)
         self.__validate_authentication(auth)
-        self._auth_obj = auth           
+        self._auth_obj = auth
 
     #------------------------#
-    #-- GUEST FILE METHODS --#
+    # -- GUEST FILE METHODS --#
     #------------------------#
 
-    def make_directory(self, path, create_parents = True):
+    def make_directory(self, path, create_parents=True):
         """
         Creates a directory in the guest OS
           * path [string]: The complete path to the directory to be created.
@@ -914,11 +914,11 @@ class VIVApp:
             request.set_element_auth(self._auth_obj)
             request.set_element_directoryPath(path)
             request.set_element_createParentDirectories(create_parents)
-            
+
             self._server._proxy.MakeDirectoryInGuest(request)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-    
+
     def move_directory(self, src_path, dst_path):
         """
         Moves or renames a directory in the guest.
@@ -944,7 +944,7 @@ class VIVApp:
             request.set_element_auth(self._auth_obj)
             request.set_element_srcDirectoryPath(src_path)
             request.set_element_dstDirectoryPath(dst_path)
-            
+
             self._server._proxy.MoveDirectoryInGuest(request)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
@@ -974,12 +974,12 @@ class VIVApp:
             request.set_element_auth(self._auth_obj)
             request.set_element_directoryPath(path)
             request.set_element_recursive(recursive)
-            
+
             self._server._proxy.DeleteDirectoryInGuest(request)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-        
-    def list_files(self, path, match_pattern = None):
+
+    def list_files(self, path, match_pattern=None):
         """
         Returns information about files or directories in the guest.
           * path [string]: The complete path to the directory or file to query.
@@ -1025,15 +1025,15 @@ class VIVApp:
                 return ret, finfo.Remaining
             except (VI.ZSI.FaultException), e:
                 raise VIApiException(e)
-        
+
         file_set, remaining = ListFilesInGuest(path, match_pattern, None, None)
         if remaining:
             file_set.extend(ListFilesInGuest(path, match_pattern,
                                             len(file_set), remaining)[0])
-        
+
         return file_set
 
-    def get_file(self, guest_path, local_path, overwrite = False):
+    def get_file(self, guest_path, local_path, overwrite=False):
         """
         Initiates an operation to transfer a file from the guest.
           * guest_path [string]: The complete path to the file inside the guest 
@@ -1050,9 +1050,9 @@ class VIVApp:
         if os.path.exists(local_path) and not overwrite:
             raise VIException("Local file already exists",
                               FaultTypes.PARAMETER_ERROR)
-        
+
         from urlparse import urlparse
-        
+
         try:
             request = VI.InitiateFileTransferFromGuestRequestMsg()
             _this = request.new__this(self._file_mgr)
@@ -1063,8 +1063,8 @@ class VIVApp:
             request.set_element_vm(vm)
             request.set_element_auth(self._auth_obj)
             request.set_element_guestFilePath(guest_path)
-            
-            
+
+
             url = self._server._proxy.InitiateFileTransferFromGuest(request
                                                                 )._returnval.Url
             url = url.replace("*", urlparse(self._server._proxy.binding.url
@@ -1073,7 +1073,7 @@ class VIVApp:
                 import urllib2
                 req = urllib2.Request(url)
                 r = urllib2.urlopen(req)
-                
+
                 CHUNK = 16 * 1024
                 fd = open(local_path, "wb")
                 while True:
@@ -1083,14 +1083,14 @@ class VIVApp:
                 fd.close()
             else:
                 import urllib
-                #I was getting a SSL Protocol error executing this on
-                #python 2.6, but not with 2.5
+                # I was getting a SSL Protocol error executing this on
+                # python 2.6, but not with 2.5
                 urllib.urlretrieve(url, local_path)
-            
+
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-    
-    def send_file(self, local_path, guest_path, overwrite = False):
+
+    def send_file(self, local_path, guest_path, overwrite=False):
         """
         Initiates an operation to transfer a file to the guest.
           * local_path [string]: The path to the local file to be sent
@@ -1108,14 +1108,14 @@ class VIVApp:
                               FaultTypes.INVALID_OPERATION)
         import urllib2
         from urlparse import urlparse
-        
+
         if not os.path.isfile(local_path):
             raise VIException("local_path is not a file or does not exists.",
                               FaultTypes.PARAMETER_ERROR)
         fd = open(local_path, "rb")
         content = fd.read()
         fd.close()
-        
+
         try:
             request = VI.InitiateFileTransferToGuestRequestMsg()
             _this = request.new__this(self._file_mgr)
@@ -1129,14 +1129,14 @@ class VIVApp:
             request.set_element_overwrite(overwrite)
             request.set_element_fileSize(len(content))
             request.set_element_fileAttributes(request.new_fileAttributes())
-            
+
             url = self._server._proxy.InitiateFileTransferToGuest(request
                                                                 )._returnval
-            
+
             url = url.replace("*", urlparse(self._server._proxy.binding.url
                                                                      ).hostname)
             opener = urllib2.build_opener(urllib2.HTTPHandler)
-            request = urllib2.Request(url, data = content)
+            request = urllib2.Request(url, data=content)
             request.get_method = lambda: 'PUT'
             resp = opener.open(request)
             if not resp.code == 200:
@@ -1144,8 +1144,8 @@ class VIVApp:
                                   FaultTypes.TASK_ERROR)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-    
-    def move_file(self, src_path, dst_path, overwrite = False):
+
+    def move_file(self, src_path, dst_path, overwrite=False):
         """
         Renames a file in the guest.
           * src_path [string]: The complete path to the original file or 
@@ -1177,7 +1177,7 @@ class VIVApp:
             self._server._proxy.MoveFileInGuest(request)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-    
+
     def delete_file(self, path):
         """
         Deletes a file in the guest OS
@@ -1204,7 +1204,7 @@ class VIVApp:
             raise VIApiException(e)
 
     #---------------------------#
-    #-- GUEST PROCESS METHODS --#
+    # -- GUEST PROCESS METHODS --#
     #---------------------------#
 
     def list_processes(self):
@@ -1282,7 +1282,7 @@ class VIVApp:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def start_process(self, program_path, args = None, env = None, cwd = None):
+    def start_process(self, program_path, args=None, env=None, cwd=None):
         """
         Starts a program in the guest operating system. Returns the process PID.
             program_path [string]: The absolute path to the program to start.
@@ -1318,16 +1318,16 @@ class VIVApp:
             request.set_element_auth(self._auth_obj)
             spec = request.new_spec()
             spec.set_element_programPath(program_path)
-            if env: spec.set_element_envVariables(["%s=%s" % (k, v) 
+            if env: spec.set_element_envVariables(["%s=%s" % (k, v)
                                                   for k, v in env.iteritems()])
             if cwd: spec.set_element_workingDirectory(cwd)
             spec.set_element_arguments("")
             if args:
                 import subprocess
                 spec.set_element_arguments(subprocess.list2cmdline(args))
-                
+
             request.set_element_spec(spec)
-            
+
             return self._server._proxy.StartProgramInGuest(request)._returnval
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
@@ -1358,10 +1358,10 @@ class VIVApp:
             raise VIApiException(e)
 
     #-------------------#
-    #-- OTHER METHODS --#
+    # -- OTHER METHODS --#
     #-------------------#
-    
-    def get_property(self, name = '', from_cache = True):
+
+    def get_property(self, name='', from_cache=True):
         """"Returns the VM property with the given @name or None if the property
         doesn't exist or have not been set. The property is looked in the cached
         info obtained from the last time the server was requested.
@@ -1383,7 +1383,7 @@ class VIVApp:
             self.__update_properties()
         return self._properties.get(name)
 
-    def get_properties(self, from_cache = True):
+    def get_properties(self, from_cache=True):
         """Returns a dictionary of property of this VM.
         If you expect to get a volatile property (that might have changed since
         the last time the properties were queried), you may set @from_cache to
@@ -1398,7 +1398,7 @@ class VIVApp:
         None if there isn't any or it can't be retrieved"""
         if self._resource_pool:
             oc = self._server._get_object_properties(
-                                   self._resource_pool, property_names = ['name'])
+                                   self._resource_pool, property_names=['name'])
             if not hasattr(oc, 'PropSet'):
                 return None
             prop_set = oc.PropSet
@@ -1408,8 +1408,8 @@ class VIVApp:
                 if prop.Name == 'name':
                     return prop.Val
 
-    
-    def set_extra_config(self, settings, sync_run = True):
+
+    def set_extra_config(self, settings, sync_run=True):
         """Sets the advanced configuration settings (as the ones on the .vmx
         file).
           * settings: a key-value pair dictionary with the settings to 
@@ -1427,7 +1427,7 @@ class VIVApp:
             _this = request.new__this(self._mor)
             _this.set_attribute_type(self._mor.get_attribute_type())
             request.set_element__this(_this)
-    
+
             spec = request.new_spec()
             extra_config = []
             for k, v in settings.iteritems():
@@ -1436,7 +1436,7 @@ class VIVApp:
                 ec.set_element_value(str(v))
                 extra_config.append(ec)
             spec.set_element_extraConfig(extra_config)
-    
+
             request.set_element_spec(spec)
             task = self._server._proxy.ReconfigVM_Task(request)._returnval
             vi_task = VITask(task, self._server)
@@ -1452,15 +1452,15 @@ class VIVApp:
             raise VIApiException(e)
 
     #---------------------#
-    #-- PRIVATE METHODS --#
+    # -- PRIVATE METHODS --#
     #---------------------#
 
     def __create_snapshot_list(self):
         """Creates a VISnapshot list with the snapshots this VM has. Stores that
         list in self._snapshot_list"""
 
-        def create_list(snap_list = [], cur_node = None):
-            #first create the trees of snapshots
+        def create_list(snap_list=[], cur_node=None):
+            # first create the trees of snapshots
             if not cur_node:
                 children = self._root_snapshots
             else:
@@ -1563,13 +1563,13 @@ class VIVApp:
             self._server._proxy.ValidateCredentialsInGuest(request)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
-    
+
     def __update_properties(self):
         """Refreshes the properties retrieved from the virtual machine
         (i.e. name, path, snapshot tree, etc). To reduce traffic, all the
         properties are retrieved from one shot, if you expect changes, then you
         should call this method before other"""
-        
+
         def update_devices(devices):
             for dev in devices:
                 d = {
@@ -1596,9 +1596,9 @@ class VIVApp:
                 if hasattr(dev, 'busNumber'):
                     d['busNumber'] = dev.busNumber
                     d['devices'] = getattr(dev, 'device', [])
-                    
+
                 self._devices[dev.key] = d
-        
+
         def update_disks(disks):
             for disk in disks:
                 files = []
@@ -1613,7 +1613,7 @@ class VIVApp:
                         if f['type'] == 'diskDescriptor':
                             store = f['name']
                 dev = self._devices[disk.key]
-                
+
                 self._disks.append({
                                    'device': dev,
                                    'files': files,
@@ -1622,7 +1622,7 @@ class VIVApp:
                                    'descriptor': store,
                                    'label': dev['label'],
                                    })
-        
+
         def update_files(files):
             for file_info in files:
                 self._files[file_info.key] = {
@@ -1631,18 +1631,18 @@ class VIVApp:
                                         'size': file_info.size,
                                         'type': file_info.type
                                         }
-                
-        
+
+
         try:
             self.properties = VIProperty(self._server, self._mor)
         except (VI.ZSI.FaultException), e:
-            raise VIApiException(e)      
-        
+            raise VIApiException(e)
+
         p = {}
         p['name'] = self.properties.name
-        
+
         #------------------------#
-        #-- UPDATE CONFIG INFO --#
+        # -- UPDATE CONFIG INFO --#
         if hasattr(self.properties, "config"):
             p['guest_id'] = self.properties.config.guestId
             p['guest_full_name'] = self.properties.config.guestFullName
@@ -1650,14 +1650,14 @@ class VIVApp:
                 p['path'] = self.properties.config.files.vmPathName
             p['memory_mb'] = self.properties.config.hardware.memoryMB
             p['num_cpu'] = self.properties.config.hardware.numCPU
-        
+
             if hasattr(self.properties.config.hardware, "device"):
                 update_devices(self.properties.config.hardware.device)
                 p['devices'] = self._devices
-        
+
         #-----------------------#
-        #-- UPDATE GUEST INFO --#
-        
+        # -- UPDATE GUEST INFO --#
+
         if hasattr(self.properties, "guest"):
             if hasattr(self.properties.guest, "hostName"):
                 p['hostname'] = self.properties.guest.hostName
@@ -1672,12 +1672,12 @@ class VIVApp:
                                  'ip_addresses':getattr(nic, "ipAddress", []),
                                  'network':getattr(nic, "network", None)
                                 })
-           
+
                 p['net'] = nics
-        
+
         #------------------------#
-        #-- UPDATE LAYOUT INFO --#
-        
+        # -- UPDATE LAYOUT INFO --#
+
         if hasattr(self.properties, "layoutEx"):
             if hasattr(self.properties.layoutEx, "file"):
                 update_files(self.properties.layoutEx.file)
@@ -1685,17 +1685,17 @@ class VIVApp:
             if hasattr(self.properties.layoutEx, "disk"):
                 update_disks(self.properties.layoutEx.disk)
                 p['disks'] = self._disks
-            
+
         self._properties = p
-        
+
         #----------------------#
-        #-- UPDATE SNAPSHOTS --#
-        
+        # -- UPDATE SNAPSHOTS --#
+
         if hasattr(self.properties, "snapshot"):
             if hasattr(self.properties.snapshot, "currentSnapshot"):
                 self.__current_snapshot = \
                                    self.properties.snapshot.currentSnapshot._obj
-            
+
             self._root_snapshots = []
             for root_snap in self.properties.snapshot.rootSnapshotList:
                 root = VISnapshot(root_snap)
@@ -1703,10 +1703,10 @@ class VIVApp:
             self.__create_snapshot_list()
 
         #-----------------------#
-        #-- SET RESOURCE POOL --#
+        # -- SET RESOURCE POOL --#
         if hasattr(self.properties, "resourcePool"):
             self._resource_pool = self.properties.resourcePool._obj
-            
+
 
 class VMPowerState:
     POWERED_ON = 'POWERED ON'
@@ -1721,17 +1721,17 @@ class VMPowerState:
     UNKNOWN = 'UNKNOWN'
 
 class ToolsStatus:
-    #VMware Tools has never been installed or has not run in the virtual machine
+    # VMware Tools has never been installed or has not run in the virtual machine
     NOT_INSTALLED = 'NOT INSTALLED'
 
-    #VMware Tools is not running.
+    # VMware Tools is not running.
     NOT_RUNNING = 'NOT RUNNING'
 
-    #VMware Tools is running and the version is current.
+    # VMware Tools is running and the version is current.
     RUNNING = 'RUNNING'
 
-    #VMware Tools is running, but the version is not current.
+    # VMware Tools is running, but the version is not current.
     RUNNING_OLD = 'RUNNING OLD'
 
-    #Couldn't obtain the status of the VMwareTools.
+    # Couldn't obtain the status of the VMwareTools.
     UNKNOWN = 'UNKNOWN'
