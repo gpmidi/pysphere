@@ -51,7 +51,7 @@ class VIServer:
         # By default impersonate the VI Client to be accepted by Virtual Server
         self.__initial_headers = {"User-Agent":"VMware VI Client/5.0.0"}
 
-    def connect(self, host, user, password, trace_file = None, sock_timeout = None):
+    def connect(self, host, user, password, trace_file=None, sock_timeout=None):
         """Opens a session to a VC/ESX server with the given credentials:
         @host: is the server's hostname or address. If the web service uses
         another protocol or port than the default, you must use the full
@@ -89,10 +89,10 @@ class VIServer:
                 args['transdict'] = {'timeout':sock_timeout}
 
             self._proxy = locator.getVimPortType(**args)
-            
+
             for header, value in self.__initial_headers.iteritems():
                 self._proxy.binding.AddHeader(header, value)
-                
+
             # get service content from service instance
             request = VI.RetrieveServiceContentRequestMsg()
             mor_service_instance = request.new__this('ServiceInstance')
@@ -156,8 +156,8 @@ class VIServer:
         """Returns a Performance Manager entity"""
         return PerformanceManager(self, self._do_service_content.PerfManager)
 
-    def get_task_history_collector(self, entity = None, recursion = None,
-                                   states = None):
+    def get_task_history_collector(self, entity=None, recursion=None,
+                                   states=None):
         """Creates a Task History Collector that gathers Task info objects.
         based on the provides filters.
           * entity: Entity MOR, if provided filters tasks related to this entity
@@ -170,7 +170,7 @@ class VIServer:
         """
         return VITaskHistoryCollector(self, entity, recursion, states)
 
-    def get_hosts(self, from_mor = None):
+    def get_hosts(self, from_mor=None):
         """
         Returns a dictionary of the existing hosts keys are their names
         and values their ManagedObjectReference object.
@@ -178,9 +178,9 @@ class VIServer:
             managed entity.
         """
         return self._get_managed_objects(MORTypes.HostSystem, from_mor)
-    
 
-    def get_datastores(self, from_mor = None):
+
+    def get_datastores(self, from_mor=None):
         """
         Returns a dictionary of the existing datastores. Keys are
         ManagedObjectReference and values datastore names.
@@ -188,8 +188,8 @@ class VIServer:
             specified managed entity.
         """
         return self._get_managed_objects(MORTypes.Datastore, from_mor)
-        
-    def get_clusters(self, from_mor = None):
+
+    def get_clusters(self, from_mor=None):
         """
         Returns a dictionary of the existing clusters. Keys are their 
         ManagedObjectReference objects and values their names.
@@ -199,16 +199,16 @@ class VIServer:
         return self._get_managed_objects(MORTypes.ClusterComputeResource,
                                                from_mor)
 
-    def get_datacenters(self, from_mor = None):
+    def get_datacenters(self, from_mor=None):
         """
         Returns a dictionary of the existing datacenters. keys are their
         ManagedObjectReference objects and values their names.
         @from_mor: if given, retrieves the datacenters contained within the 
             specified managed entity.
         """
-        return self._get_managed_objects(MORTypes.Datacenter, from_mor)           
+        return self._get_managed_objects(MORTypes.Datacenter, from_mor)
 
-    def get_resource_pools(self, from_mor = None):
+    def get_resource_pools(self, from_mor=None):
         """
         Returns a dictionary of the existing ResourcePools. keys are their
         ManagedObjectReference objects and values their full path names.
@@ -223,9 +223,9 @@ class VIServer:
                 return '/' + node['name']
         rps = {}
         prop = self._retrieve_properties_traversal(
-                                      property_names = ["name", "resourcePool"],
-                                      from_node = from_mor,
-                                      obj_type = MORTypes.ResourcePool)
+                                      property_names=["name", "resourcePool"],
+                                      from_node=from_mor,
+                                      obj_type=MORTypes.ResourcePool)
         for oc in prop:
             this_rp = {}
             this_rp["children"] = []
@@ -246,11 +246,11 @@ class VIServer:
                 rps[child]["parent"] = _id
         ret = {}
         for rp in rps.itervalues():
-            ret[rp["mor"]] = get_path(rps, rp) 
-        
+            ret[rp["mor"]] = get_path(rps, rp)
+
         return ret
 
-    def get_vm_by_path(self, path, datacenter = None):
+    def get_vm_by_path(self, path, datacenter=None):
         """Returns an instance of VIVirtualMachine. Where its path matches
         @path. The VM is searched througout all the datacenters, unless the
         name or MOR of the datacenter the VM belongs to is provided."""
@@ -291,7 +291,7 @@ class VIServer:
         raise VIException("Could not find a VM with path '%s'" % path,
                           FaultTypes.OBJECT_NOT_FOUND)
 
-    def get_vm_by_name(self, name, datacenter = None, from_mor = None):
+    def get_vm_by_name(self, name, datacenter=None, from_mor=None):
         """
         Returns an instance of VIVirtualMachine. Where its name matches @name.
         The VM is searched throughout all the datacenters, unless the name or 
@@ -313,10 +313,10 @@ class VIServer:
                 elif datacenter:
                     dc = self.get_datacenters()
                     nodes = [k for k, v in dc.iteritems() if v == datacenter]
-                
+
             for node in nodes:
                 vms = self._get_managed_objects(MORTypes.VirtualMachine,
-                                                      from_mor = node)
+                                                      from_mor=node)
                 for k, v in vms.iteritems():
                     if v == name:
                         return VIVirtualMachine(self, k)
@@ -325,8 +325,8 @@ class VIServer:
 
         raise VIException("Could not find a VM named '%s'" % name,
                           FaultTypes.OBJECT_NOT_FOUND)
-    
-    def get_vapp_by_name(self, name, datacenter = None, from_mor = None):
+
+    def get_vapp_by_name(self, name, datacenter=None, from_mor=None):
         """
         Returns an instance of VIVApp. Where its name matches @name.
         The vApp is searched throughout all the datacenters, unless the name or 
@@ -348,17 +348,17 @@ class VIServer:
                 elif datacenter:
                     dc = self.get_datacenters()
                     nodes = [k for k, v in dc.iteritems() if v == datacenter]
-                    
+
             for node in nodes:
                 vms = self._get_managed_objects(MORTypes.VirtualApp,
-                                                      from_mor = node)
+                                                      from_mor=node)
                 for k, v in vms.iteritems():
                     if v == name:
                         return VIVApp(self, k)
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-        raise VIException("Could not find a VM named '%s'" % name,
+        raise VIException("Could not find a vApp named '%s'" % name,
                           FaultTypes.OBJECT_NOT_FOUND)
 
     def get_server_type(self):
@@ -377,9 +377,9 @@ class VIServer:
         """
         return self.__api_type
 
-    def get_registered_vms(self, datacenter = None, cluster = None,
-                           resource_pool = None, status = None,
-                           advanced_filters = None):
+    def get_registered_vms(self, datacenter=None, cluster=None,
+                           resource_pool=None, status=None,
+                           advanced_filters=None):
         """Returns a list of VM Paths.
         @datacenter: name or MORs to filter VMs registered in that datacenter
         @cluster: name or MORs to filter VMs registered in that cluster. If set
@@ -395,18 +395,18 @@ class VIServer:
             raise VIException("Must call 'connect' before invoking this method",
                               FaultTypes.NOT_CONNECTED)
         try:
-            
+
             if not advanced_filters or not isinstance(advanced_filters, dict):
                 advanced_filters = {}
-                
+
             if status:
                 advanced_filters['runtime.powerState'] = [status]
-        
+
             property_filter = list(advanced_filters.iterkeys())
-            
+
             if not 'config.files.vmPathName' in property_filter:
                 property_filter.insert(0, 'config.files.vmPathName')
-            
+
             # Root MOR filters
             ret = []
             nodes = [None]
@@ -418,7 +418,7 @@ class VIServer:
             elif cluster and VIMor.is_mor(cluster):
                 nodes = [cluster]
             elif cluster:
-                nodes = [k for k, v in self.get_clusters().iteritems() 
+                nodes = [k for k, v in self.get_clusters().iteritems()
                         if v == cluster]
             elif datacenter and VIMor.is_mor(datacenter):
                 nodes = [datacenter]
@@ -428,9 +428,9 @@ class VIServer:
 
             for node in nodes:
                 obj_content = self._retrieve_properties_traversal(
-                                            property_names = property_filter,
-                                            from_node = node,
-                                            obj_type = MORTypes.VirtualMachine)
+                                            property_names=property_filter,
+                                            from_node=node,
+                                            obj_type=MORTypes.VirtualMachine)
                 if not obj_content:
                     continue
                 for obj in obj_content:
@@ -438,11 +438,11 @@ class VIServer:
                         prop_set = obj.PropSet
                     except AttributeError:
                         continue
-                    
+
                     ppath = None
-                    filter_match = dict([(k, False) 
+                    filter_match = dict([(k, False)
                                          for k in advanced_filters.iterkeys()])
-                    
+
                     for item in prop_set:
                         if item.Name == 'config.files.vmPathName':
                             ppath = item.Val
@@ -452,7 +452,7 @@ class VIServer:
                                 expected = [expected]
                             if item.Val in expected:
                                 filter_match[item.Name] = True
-        
+
                     if all(filter_match.values()):
                         ret.append(ppath)
             return ret
@@ -481,7 +481,7 @@ class VIServer:
         except (VI.ZSI.FaultException), e:
             raise VIApiException(e)
 
-    def _get_object_properties(self, mor, property_names = [], get_all = False):
+    def _get_object_properties(self, mor, property_names=[], get_all=False):
         """Returns the properties defined in property_names (or all if get_all
         is set to True) of the managed object reference given in @mor.
         Returns the corresponding objectContent data object."""
@@ -584,11 +584,11 @@ class VIServer:
             return request_call(request)
 
         except (VI.ZSI.FaultException), e:
-            raise VIApiException(e)                 
+            raise VIApiException(e)
 
 
-    def _retrieve_properties_traversal(self, property_names = [],
-                                      from_node = None, obj_type = 'ManagedEntity'):
+    def _retrieve_properties_traversal(self, property_names=[],
+                                      from_node=None, obj_type='ManagedEntity'):
         """Uses VI API's property collector to retrieve the properties defined
         in @property_names of Managed Objects of type @obj_type ('ManagedEntity'
         by default). Starts the search from the managed object reference
@@ -597,14 +597,14 @@ class VIServer:
         try:
             if not from_node:
                 from_node = self._do_service_content.RootFolder
-            
+
             elif isinstance(from_node, tuple) and len(from_node) == 2:
                 from_node = VIMor(from_node[0], from_node[1])
             elif not VIMor.is_mor(from_node):
                 raise VIException("from_node must be a MOR object or a "
                                   "(<str> mor_id, <str> mor_type) tuple",
                                   FaultTypes.PARAMETER_ERROR)
-            
+
             request, request_call = self._retrieve_property_request()
 
 
@@ -785,7 +785,7 @@ class VIServer:
                 retval = self._proxy.ContinueRetrievePropertiesEx(
                                                   request)._returnval
                 ret.extend(retval.Objects)
-            return ret            
+            return ret
 
         if self.__api_version >= "4.1":
             # RetrieveProperties is deprecated (but supported) in sdk 4.1.
@@ -809,12 +809,12 @@ class VIServer:
         Both name and value should be strings."""
         if not (isinstance(name, basestring) and isinstance(value, basestring)):
             return
-        
+
         if not self.__logged:
             self.__initial_headers[name] = value
         else:
             self._proxy.binding.AddHeader(name, value)
-        
+
     def _reset_headers(self):
         """Resets the additional HTTP headers configured to be sent along with
         the SOAP requests."""
@@ -822,33 +822,33 @@ class VIServer:
             self.__initial_headers = {}
         else:
             self._proxy.binding.ResetHeaders()
-            
-    def _get_managed_objects(self, mo_type, from_mor = None):
+
+    def _get_managed_objects(self, mo_type, from_mor=None):
         """Returns a dictionary of managed objects and their names"""
-        
-        content = self._retrieve_properties_traversal(property_names = ['name'],
-                                                      from_node = from_mor,
-                                                      obj_type = mo_type)
+
+        content = self._retrieve_properties_traversal(property_names=['name'],
+                                                      from_node=from_mor,
+                                                      obj_type=mo_type)
         if not content: return {}
         try:
             return dict([(o.Obj, o.PropSet[0].Val) for o in content])
         except VI.ZSI.FaultException, e:
             raise VIApiException(e)
-    
-    #---- DEPRECATED METHODS ----#    
-            
-    def _get_clusters(self, from_cache = True):
+
+    #---- DEPRECATED METHODS ----#
+
+    def _get_clusters(self, from_cache=True):
         """DEPRECATED: use get_clusters instead."""
         import warnings
         from exceptions import DeprecationWarning
         warnings.warn("method '_get_clusters' is DEPRECATED use "\
                       "'get_clusters' instead",
                       DeprecationWarning)
-        
+
         ret = self.get_clusters()
         return dict([(v, k) for k, v in ret.iteritems()])
-    
-    def _get_datacenters(self, from_cache = True):
+
+    def _get_datacenters(self, from_cache=True):
         """DEPRECATED: use get_datacenters instead."""
         import warnings
         from exceptions import DeprecationWarning
@@ -858,8 +858,8 @@ class VIServer:
 
         ret = self.get_datacenters()
         return dict([(v, k) for k, v in ret.iteritems()])
-    
-    def _get_resource_pools(self, from_cache = True):
+
+    def _get_resource_pools(self, from_cache=True):
         """DEPRECATED: use get_resource_pools instead."""
         import warnings
         from exceptions import DeprecationWarning
@@ -868,4 +868,4 @@ class VIServer:
                       DeprecationWarning)
 
         ret = self.get_resource_pools()
-        return dict([(v, k) for k, v in ret.iteritems()])     
+        return dict([(v, k) for k, v in ret.iteritems()])
